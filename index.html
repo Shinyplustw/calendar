@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>行事曆填報系統</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f4f0;color:#1a1a18;min-height:100vh;}
+.wrap{max-width:780px;margin:0 auto;padding:2rem 1rem 4rem;}
+.site-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.75rem;}
+.site-title{font-size:16px;font-weight:500;}
+.header-btns{display:flex;gap:8px;}
+.btn-sm{font-size:12px;padding:5px 14px;border-radius:20px;border:0.5px solid #b4b2a9;background:none;cursor:pointer;color:#5f5e5a;font-family:inherit;}
+.btn-sm:hover{background:#e8e7e1;}
+.btn-sm.active-tab{background:#1a1a18;color:#fff;border-color:#1a1a18;}
+.panel{display:none;}
+.panel.active{display:block;}
+.notice{background:#FAEEDA;border:0.5px solid #FAC775;border-radius:10px;padding:12px 16px;font-size:13px;color:#633806;margin-bottom:1.25rem;line-height:1.6;}
+.notice strong{font-weight:500;}
+.form-card{background:#fff;border:0.5px solid #dddcd4;border-radius:12px;padding:1.25rem;margin-bottom:1rem;}
+.form-card h3{font-size:11px;font-weight:500;color:#888780;margin-bottom:1rem;text-transform:uppercase;letter-spacing:.08em;}
+.frow{margin-bottom:.85rem;}
+.frow:last-child{margin-bottom:0;}
+.frow label{display:flex;align-items:center;gap:4px;font-size:13px;color:#5f5e5a;margin-bottom:4px;}
+.req{color:#E24B4A;font-size:12px;}
+.frow input,.frow select,.frow textarea{width:100%;font-size:14px;padding:8px 10px;border:0.5px solid #d3d1c7;border-radius:8px;background:#fff;color:#1a1a18;outline:none;font-family:inherit;transition:border-color .15s;}
+.frow input:focus,.frow select:focus,.frow textarea:focus{border-color:#888780;box-shadow:0 0 0 3px rgba(0,0,0,.05);}
+.frow input.err,.frow select.err,.frow textarea.err{border-color:#E24B4A;}
+.frow textarea{height:96px;resize:none;line-height:1.65;}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;}
+.submit-btn{width:100%;padding:12px;background:#1a1a18;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;margin-top:.25rem;}
+.submit-btn:hover{background:#2c2c2a;}
+.submit-btn:disabled{background:#b4b2a9;cursor:not-allowed;}
+.success-msg{display:none;background:#EAF3DE;color:#27500A;border:0.5px solid #C0DD97;border-radius:8px;padding:12px 16px;font-size:14px;margin-bottom:1rem;}
+.err-hint{font-size:11px;color:#E24B4A;margin-top:3px;display:none;}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;}
+.cal-nav button{background:none;border:0.5px solid #b4b2a9;border-radius:8px;padding:5px 14px;font-size:13px;cursor:pointer;color:#1a1a18;font-family:inherit;}
+.cal-nav button:hover{background:#f1efe8;}
+.cal-title{font-size:15px;font-weight:500;}
+.cgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.ch{text-align:center;font-size:12px;color:#888780;font-weight:500;padding:6px 4px;}
+.cd{min-height:80px;border-radius:8px;border:0.5px solid #dddcd4;padding:5px 7px;background:#fff;}
+.cd.empty{background:none;border-color:transparent;}
+.cd .dn{font-size:13px;color:#888780;margin-bottom:3px;}
+.cd.today .dn{color:#1a1a18;font-weight:500;}
+.cd.today{box-shadow:0 0 0 2px #1a1a18;}
+.edot{display:block;font-size:10px;line-height:1.4;padding:2px 5px;border-radius:4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.edot-int{background:#FAC775;color:#633806;}
+.edot-ext{background:#C0DD97;color:#27500A;}
+.edot-meeting{background:#F7C1C1;color:#791F1F;}
+.plabel{display:inline-block;font-size:10px;line-height:1.4;padding:2px 5px;border-radius:4px;margin-bottom:3px;font-weight:500;}
+.pl-deadline{background:#d3d1c7;color:#444441;}
+.pw-gate{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:1rem;}
+.pw-gate h2{font-size:16px;font-weight:500;}
+.pw-gate p{font-size:13px;color:#888780;}
+.pw-wrap{display:flex;gap:8px;width:100%;max-width:320px;}
+.pw-wrap input{flex:1;font-size:14px;padding:9px 12px;border:0.5px solid #d3d1c7;border-radius:8px;font-family:inherit;outline:none;}
+.pw-wrap input:focus{border-color:#888780;}
+.pw-btn{padding:9px 18px;background:#1a1a18;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit;}
+.pw-err{font-size:12px;color:#E24B4A;min-height:16px;}
+.summary-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1.25rem;}
+.sc{background:#f1efe8;border-radius:8px;padding:12px 14px;}
+.sl{font-size:12px;color:#5f5e5a;margin-bottom:4px;}
+.sn{font-size:22px;font-weight:500;}
+.sec-label{font-size:12px;font-weight:500;color:#888780;text-transform:uppercase;letter-spacing:.06em;margin:1.5rem 0 .6rem;}
+.filter-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem;}
+.fb{font-size:12px;padding:5px 14px;border-radius:20px;border:0.5px solid #b4b2a9;background:none;cursor:pointer;color:#5f5e5a;font-family:inherit;}
+.fb.active{background:#1a1a18;color:#fff;border-color:#1a1a18;}
+.alist{display:flex;flex-direction:column;gap:8px;}
+.acard{background:#fff;border:0.5px solid #dddcd4;border-radius:12px;padding:12px 16px;}
+.acard-title{font-size:14px;font-weight:500;}
+.acard-meta{font-size:12px;color:#888780;margin-top:3px;line-height:1.65;}
+.acard-desc{font-size:13px;color:#5f5e5a;margin-top:8px;padding-top:8px;border-top:0.5px solid #e0dfd8;line-height:1.65;}
+.badge-row{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap;align-items:center;}
+.badge{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:500;}
+.b-int{background:#EAF3DE;color:#27500A;}
+.b-ext{background:#E6F1FB;color:#042C53;}
+.b-fmt{background:#F1EFE8;color:#444441;}
+.b-dm{background:#FAEEDA;color:#633806;}
+.b-open{background:#EEEDFE;color:#3C3489;}
+.b-meeting{background:#F1EFE8;color:#5f5e5a;}
+.b-closed-tag{background:#F1EFE8;color:#5f5e5a;}
+.toggle-row{display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:0.5px solid #e0dfd8;flex-wrap:wrap;align-items:center;}
+.toggle-btn{font-size:12px;padding:4px 12px;border-radius:20px;border:0.5px solid #d3d1c7;background:none;cursor:pointer;color:#b4b2a9;font-family:inherit;transition:all .15s;}
+.toggle-btn:hover{border-color:#888780;color:#5f5e5a;}
+.toggle-btn.on-dm{background:#FAEEDA;color:#633806;border-color:#FAC775;font-weight:500;}
+.toggle-btn.on-open{background:#EEEDFE;color:#3C3489;border-color:#CECBF6;font-weight:500;}
+.empty-note{font-size:13px;color:#888780;padding:6px 0;}
+.countdown-num{font-size:28px;font-weight:500;color:#633806;display:block;margin:6px 0 2px;}
+.countdown-label{font-size:13px;color:#854F0B;}
+.open-banner{background:#EAF3DE;border:0.5px solid #C0DD97;border-radius:10px;padding:14px 18px;margin-bottom:1.25rem;display:none;}
+.open-banner strong{font-weight:500;color:#27500A;}
+.open-countdown-num{font-size:28px;font-weight:500;color:#27500A;display:block;margin:6px 0 2px;}
+.open-countdown-label{font-size:13px;color:#3B6D11;}
+.logout-btn{font-size:12px;padding:5px 14px;border-radius:20px;border:0.5px solid #b4b2a9;background:none;cursor:pointer;color:#5f5e5a;font-family:inherit;}
+.logout-btn:hover{background:#f5f4f0;}
+
+.edit-result{background:#EAF3DE;border:0.5px solid #C0DD97;border-radius:10px;padding:16px 18px;margin-bottom:1rem;display:none;}
+.edit-result h4{font-size:14px;font-weight:500;color:#27500A;margin-bottom:6px;}
+.edit-code{font-size:22px;font-weight:500;letter-spacing:.15em;color:#1a1a18;margin:6px 0 8px;}
+.edit-result p{font-size:12px;color:#3B6D11;line-height:1.6;}
+.edit-lookup{background:#fff;border:0.5px solid #dddcd4;border-radius:12px;padding:1.25rem;margin-bottom:1rem;}
+.edit-lookup h3{font-size:11px;font-weight:500;color:#888780;margin-bottom:1rem;text-transform:uppercase;letter-spacing:.08em;}
+.lookup-row{display:flex;gap:8px;}
+.lookup-row input{flex:1;font-size:14px;padding:8px 10px;border:0.5px solid #d3d1c7;border-radius:8px;font-family:inherit;outline:none;}
+.lookup-row input:focus{border-color:#888780;}
+.lookup-btn{padding:8px 18px;background:#1a1a18;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.lookup-err{font-size:12px;color:#E24B4A;margin-top:6px;min-height:16px;}
+.edit-form-card{background:#fff;border:0.5px solid #dddcd4;border-radius:12px;padding:1.25rem;margin-bottom:1rem;display:none;}
+.edit-form-card h3{font-size:11px;font-weight:500;color:#888780;margin-bottom:1rem;text-transform:uppercase;letter-spacing:.08em;}
+.delete-btn{width:100%;padding:11px;background:none;color:#A32D2D;border:0.5px solid #F09595;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;margin-top:.5rem;}
+.delete-btn:hover{background:#FCEBEB;}
+.admin-delete{font-size:12px;padding:4px 10px;border-radius:6px;border:0.5px solid #F09595;background:none;cursor:pointer;color:#A32D2D;font-family:inherit;margin-left:auto;}
+.admin-delete:hover{background:#FCEBEB;}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a1a18;color:#fff;padding:10px 22px;border-radius:24px;font-size:13px;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;z-index:999;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.admin-delete.confirming{background:#FCEBEB;color:#791F1F;border-color:#F09595;font-weight:500;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="site-header">
+    <span class="site-title">行事曆填報系統</span>
+    <div style="display:flex;align-items:center;gap:8px;"><span id="api-status" title="資料庫狀態" style="width:8px;height:8px;border-radius:50%;background:#d3d1c7;display:inline-block;"></span></div>
+      <div class="header-btns">
+      <button class="btn-sm active-tab" id="tab-form" onclick="switchMain('form')">填報</button>
+      <button class="btn-sm" id="tab-calendar" onclick="switchMain('calendar')">日曆</button>
+      <button class="btn-sm" id="tab-edit" onclick="switchMain('edit')">修改填報</button>
+      <button class="btn-sm" id="tab-admin" onclick="goAdmin()" aria-label="設定" style="padding:5px 10px;color:#b4b2a9;border-color:transparent;">⚙︎</button>
+    </div>
+  </div>
+
+  <!-- 填報 -->
+  <div id="main-form" class="panel active">
+    <div id="closed-notice" class="notice" style="display:none"><div id="countdown-msg"></div></div>
+    <div id="open-banner" class="open-banner">
+      <div id="open-msg"></div>
+    </div>
+    <div id="success-msg" class="success-msg">✓ 已成功送出！可至「日曆」頁面查看。</div>
+    <div class="edit-result" id="edit-result">
+      <h4>請保存你的編輯碼</h4>
+      <div class="edit-code" id="edit-code-display"></div>
+      <p>往後如需修改或刪除這筆資料，請至「修改填報」頁面輸入此編輯碼。<br>請截圖或抄下來，關閉頁面後將無法再次查看。</p>
+    </div>
+    <div id="form-body">
+      <div class="form-card">
+        <h3>基本資訊</h3>
+        <div class="frow">
+          <label>活動 / 課程名稱 <span class="req">*</span></label>
+          <input type="text" id="f-name" placeholder="請填寫完整名稱" />
+          <div class="err-hint" id="e-name">請填寫活動名稱</div>
+        </div>
+        <div class="fgrid">
+          <div class="frow">
+            <label>類型 <span class="req">*</span></label>
+            <select id="f-type">
+              <option value="">請選擇</option>
+              <option value="internal">內部團隊課程 / 活動</option>
+              <option value="external">公開課程 / 活動</option>
+              <option value="meeting">內部會議</option>
+            </select>
+            <div class="err-hint" id="e-type">請選擇類型</div>
+          </div>
+          <div class="frow">
+            <label>形式 <span class="req">*</span></label>
+            <select id="f-format">
+              <option value="">請選擇</option>
+              <option value="online">線上</option>
+              <option value="offline">線下</option>
+              <option value="hybrid">線上 + 線下</option>
+            </select>
+            <div class="err-hint" id="e-format">請選擇形式</div>
+          </div>
+        </div>
+        <div class="fgrid">
+          <div class="frow">
+            <label>開設日期 <span class="req">*</span></label>
+            <input type="date" id="f-date" />
+            <div class="err-hint" id="e-date">請填寫開設日期</div>
+          </div>
+          <div class="frow">
+            <label>時段 <span class="req">*</span></label>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="time" id="f-time-start" style="flex:1;font-size:14px;" />
+              <span style="font-size:13px;color:#888780;white-space:nowrap">至</span>
+              <input type="time" id="f-time-end" style="flex:1;font-size:14px;" />
+            </div>
+            <div class="err-hint" id="e-time">請選擇開始與結束時間</div>
+          </div>
+        </div>
+      </div>
+      <div class="form-card">
+        <h3>活動說明</h3>
+        <div class="frow">
+          <label>活動與課程重點介紹 <span class="req">*</span></label>
+          <textarea id="f-desc" placeholder="請簡述課程目標、主要內容、適合對象…"></textarea>
+          <div class="err-hint" id="e-desc">請填寫重點介紹</div>
+        </div>
+        <div class="frow">
+          <label style="justify-content:space-between">
+            <span>是否需要主持人？</span>
+          </label>
+          <div style="display:flex;gap:12px;margin-bottom:6px;">
+            <label style="display:flex;align-items:center;gap:6px;font-size:14px;color:#1a1a18;cursor:pointer;">
+              <input type="radio" name="f-host" id="f-host-no" value="no" checked onchange="toggleHost()" style="width:auto"> 不需要
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:14px;color:#1a1a18;cursor:pointer;">
+              <input type="radio" name="f-host" id="f-host-yes" value="yes" onchange="toggleHost()" style="width:auto"> 需要
+            </label>
+          </div>
+          <div id="f-host-name-wrap" style="display:none;">
+            <input type="text" id="f-host-name" placeholder="主持人本名" style="margin-top:2px;" />
+          </div>
+        </div>
+        <div class="frow">
+          <label style="justify-content:space-between">
+            <span>是否有講師？</span>
+          </label>
+          <div style="display:flex;gap:12px;margin-bottom:6px;">
+            <label style="display:flex;align-items:center;gap:6px;font-size:14px;color:#1a1a18;cursor:pointer;">
+              <input type="radio" name="f-speaker" id="f-speaker-no" value="no" checked onchange="toggleSpeaker()" style="width:auto"> 無講師
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:14px;color:#1a1a18;cursor:pointer;">
+              <input type="radio" name="f-speaker" id="f-speaker-yes" value="yes" onchange="toggleSpeaker()" style="width:auto"> 有講師
+            </label>
+          </div>
+          <div id="f-speakers-wrap" style="display:none;">
+            <div id="f-speakers-list">
+              <input type="text" class="f-speaker-input" placeholder="講師本名" style="margin-bottom:6px;" />
+            </div>
+            <button type="button" onclick="addSpeaker()" style="font-size:12px;padding:5px 14px;border-radius:6px;border:0.5px solid #d3d1c7;background:none;cursor:pointer;color:#5f5e5a;font-family:inherit;margin-top:2px;">＋ 新增講師</button>
+          </div>
+        </div>
+        <div class="frow">
+          <label>聯絡人 <span class="req">*</span> <span style="font-size:11px;color:#888780;font-weight:400">（團隊名 + 姓名）</span></label>
+          <input type="text" id="f-contact" placeholder="例：xx團隊 / 林xx" />
+          <div class="err-hint" id="e-contact">請填寫聯絡人</div>
+        </div>
+      </div>
+      <button class="submit-btn" id="submit-btn" onclick="submitForm()">送出</button>
+    </div>
+  </div>
+
+  <!-- 日曆 -->
+  <div id="main-calendar" class="panel">
+    <div class="cal-nav">
+      <button onclick="prevMonth()">← 上個月</button>
+      <span class="cal-title" id="cal-title"></span>
+      <button onclick="nextMonth()">下個月 →</button>
+    </div>
+    <div class="cgrid" id="cgrid"></div>
+  </div>
+
+
+  <!-- 修改填報 -->
+  <div id="main-edit" class="panel">
+    <div class="edit-lookup">
+      <h3>輸入編輯碼</h3>
+      <div class="lookup-row">
+        <input type="text" id="lookup-code" placeholder="例：A3K9" maxlength="6" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()" />
+        <button class="lookup-btn" onclick="lookupCode()">查詢</button>
+      </div>
+      <div class="lookup-err" id="lookup-err"></div>
+    </div>
+    <div class="edit-form-card" id="edit-form-card">
+      <h3>修改資料</h3>
+      <div class="frow"><label>活動 / 課程名稱 <span class="req">*</span></label><input type="text" id="ef-name" /></div>
+      <div class="fgrid">
+        <div class="frow"><label>類型 <span class="req">*</span></label>
+          <select id="ef-type">
+            <option value="internal">內部團隊課程 / 活動</option>
+            <option value="external">公開課程 / 活動</option>
+            <option value="meeting">內部會議</option>
+          </select>
+        </div>
+        <div class="frow"><label>形式 <span class="req">*</span></label>
+          <select id="ef-format">
+            <option value="online">線上</option>
+            <option value="offline">線下</option>
+            <option value="hybrid">線上 + 線下</option>
+          </select>
+        </div>
+      </div>
+      <div class="fgrid">
+        <div class="frow"><label>開設日期 <span class="req">*</span></label><input type="date" id="ef-date" /></div>
+        <div class="frow"><label>時段 <span class="req">*</span></label>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <input type="time" id="ef-time-start" style="flex:1;font-size:14px;" />
+            <span style="font-size:13px;color:#888780;white-space:nowrap">至</span>
+            <input type="time" id="ef-time-end" style="flex:1;font-size:14px;" />
+          </div>
+          <div class="err-hint" id="ee-time" style="display:none;font-size:11px;color:#E24B4A;margin-top:3px;">請選擇開始與結束時間</div>
+        </div>
+      </div>
+      <div class="frow"><label>活動與課程重點介紹 <span class="req">*</span></label><textarea id="ef-desc" style="height:90px;resize:none;line-height:1.65"></textarea></div>
+      <div class="frow">
+          <label>是否需要主持人？</label>
+          <div style="display:flex;gap:12px;margin-bottom:6px;">
+            <label style="display:flex;align-items:center;gap:6px;font-size:14px;color:#1a1a18;cursor:pointer;"><input type="radio" name="ef-host" id="ef-host-no" value="no" checked onchange="toggleEditHost()" style="width:auto;"> 不需要</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:14px;color:#1a1a18;cursor:pointer;"><input type="radio" name="ef-host" id="ef-host-yes" value="yes" onchange="toggleEditHost()" style="width:auto;"> 需要</label>
+          </div>
+          <div id="ef-host-name-wrap" style="display:none;"><input type="text" id="ef-host-name" placeholder="主持人本名" style="margin-top:2px;" /></div>
+        </div>
+        <div class="frow">
+          <label>是否有講師？</label>
+          <div style="display:flex;gap:12px;margin-bottom:6px;">
+            <label style="display:flex;align-items:center;gap:6px;font-size:14px;color:#1a1a18;cursor:pointer;"><input type="radio" name="ef-speaker" id="ef-speaker-no" value="no" checked onchange="toggleEditSpeaker()" style="width:auto;"> 無講師</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:14px;color:#1a1a18;cursor:pointer;"><input type="radio" name="ef-speaker" id="ef-speaker-yes" value="yes" onchange="toggleEditSpeaker()" style="width:auto;"> 有講師</label>
+          </div>
+          <div id="ef-speakers-wrap" style="display:none;">
+            <div id="ef-speakers-list"><input type="text" class="ef-speaker-input" placeholder="講師本名" style="margin-bottom:6px;" /></div>
+            <button type="button" onclick="addEditSpeaker()" style="font-size:12px;padding:5px 14px;border-radius:6px;border:0.5px solid #d3d1c7;background:none;cursor:pointer;color:#5f5e5a;font-family:inherit;margin-top:2px;">＋ 新增講師</button>
+          </div>
+        </div>
+      <div class="frow"><label>聯絡人 <span class="req">*</span></label><input type="text" id="ef-contact" /></div>
+      <button class="submit-btn" onclick="saveEdit()" style="margin-top:.5rem">儲存修改</button>
+      <button class="delete-btn" onclick="deleteEntry()">刪除這筆資料</button>
+    </div>
+  </div>
+
+  <!-- 密碼關卡 -->
+  <div id="main-pw" class="panel">
+    <div class="pw-gate">
+      <h2>後台管理</h2>
+      <p>請輸入管理員密碼</p>
+      <div class="pw-wrap">
+        <input type="password" id="pw-input" placeholder="密碼" onkeydown="if(event.key==='Enter')checkPw()" />
+        <button class="pw-btn" onclick="checkPw()">進入</button>
+      </div>
+      <div class="pw-err" id="pw-err"></div>
+    </div>
+  </div>
+
+  <!-- 後台 -->
+  <div id="main-admin" class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+      <span style="font-size:14px;font-weight:500;color:#888780">後台管理</span>
+      <div style="display:flex;gap:8px;">
+        <button class="logout-btn" onclick="loadEvents().then(()=>renderAdmin())">↻ 重新整理</button>
+        <button class="logout-btn" onclick="logout()">登出</button>
+      </div>
+    </div>
+    <div class="summary-row" id="summary-row"></div>
+    <div class="sec-label">所有紀錄</div>
+    <div class="filter-bar" style="align-items:center;">
+      <button class="fb active" onclick="setFilter('all',this)">全部</button>
+      <button class="fb" onclick="setFilter('internal',this)">內部</button>
+      <button class="fb" onclick="setFilter('external',this)">公開類型</button>
+      <button class="fb" onclick="setFilter('meeting',this)">會議</button>
+      <div style="margin-left:auto;">
+        <select id="month-filter" onchange="renderAdmin()" style="font-size:12px;padding:5px 10px;border-radius:20px;border:0.5px solid #b4b2a9;background:none;cursor:pointer;color:#5f5e5a;font-family:inherit;outline:none;">
+          <option value="all">所有月份</option>
+        </select>
+      </div>
+    </div>
+    <div class="alist" id="list-all"></div>
+  </div>
+</div>
+
+<script>
+const ADMIN_PW='60677446';
+const MONTH_ZH=['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+const WEEK=['日','一','二','三','四','五','六'];
+const now=new Date();
+let curM=now.getMonth(),curY=now.getFullYear();
+let adminUnlocked=false,currentFilter='all';
+const AT_TOKEN = 'pat51K7PfZ8rrGVUy.7a15aa73d60cf8d8ae8fbb5d2a1eff9dc563d781d32af879cc0d70e84e3183e6';
+const AT_BASE = 'appgOlj65pZb1RwYK';
+const AT_TABLE = 'tbl3SOYqpRfrYkWdV';
+const AT_URL = `https://api.airtable.com/v0/${AT_BASE}/${AT_TABLE}`;
+const AT_HEADERS = {
+  'Authorization': `Bearer ${AT_TOKEN}`,
+  'Content-Type': 'application/json'
+};
+let events=[];
+let nextId=1;
+let loading=false;
+
+// ── Airtable API helpers ──────────────────────────────
+function rowToEvent(rec) {
+  const f = rec.fields;
+  return {
+    id: f.evId || 0,
+    _recId: rec.id,
+    editCode: f.editCode || '',
+    name: f.name || '',
+    type: f.type || 'internal',
+    format: f.format || 'online',
+    date: f.date || '',
+    time: f.time || '',
+    contact: f.contact || '',
+    desc: f.desc || '',
+    host: f.host || '',
+    speakers: f.speakers ? JSON.parse(f.speakers) : [],
+    needsDM: f.needsDM === true,
+    isOpen: f.isOpen === true,
+    submittedAt: f.submittedAt || '',
+  };
+}
+
+async function atGet() {
+  let all = [], offset = null;
+  do {
+    const url = AT_URL + '?pageSize=100' + (offset ? '&offset=' + offset : '');
+    const res = await fetch(url, { headers: AT_HEADERS });
+    const data = await res.json();
+    if (data.records) all = all.concat(data.records.map(rowToEvent));
+    offset = data.offset || null;
+  } while (offset);
+  return all;
+}
+
+async function atAdd(ev) {
+  const res = await fetch(AT_URL, {
+    method: 'POST',
+    headers: AT_HEADERS,
+    body: JSON.stringify({ fields: {
+      evId: ev.id, editCode: ev.editCode, name: ev.name,
+      type: ev.type, format: ev.format, date: ev.date, time: ev.time,
+      contact: ev.contact, desc: ev.desc, host: ev.host || '',
+      speakers: JSON.stringify(ev.speakers || []),
+      needsDM: false, isOpen: false, submittedAt: ev.submittedAt
+    }})
+  });
+  return await res.json();
+}
+
+async function atUpdate(ev) {
+  if (!ev._recId) {
+    // find recId from events array
+    const found = events.find(e => e.id === ev.id);
+    if (found) ev._recId = found._recId;
+  }
+  if (!ev._recId) return;
+  await fetch(AT_URL + '/' + ev._recId, {
+    method: 'PATCH',
+    headers: AT_HEADERS,
+    body: JSON.stringify({ fields: {
+      name: ev.name, type: ev.type, format: ev.format,
+      date: ev.date, time: ev.time, contact: ev.contact,
+      desc: ev.desc, host: ev.host || '',
+      speakers: JSON.stringify(ev.speakers || []),
+      needsDM: ev.needsDM, isOpen: ev.isOpen
+    }})
+  });
+}
+
+async function atDelete(ev) {
+  if (!ev._recId) return;
+  await fetch(AT_URL + '/' + ev._recId, {
+    method: 'DELETE',
+    headers: AT_HEADERS
+  });
+}
+
+async function api(method, body) {
+  try {
+    if (method === 'GET') return await atGet();
+    // POST actions
+    if (body.action === 'init') return { ok: true };
+    if (body.action === 'add') { await atAdd(body.data); return { ok: true }; }
+    if (body.action === 'update') { await atUpdate(body.data); return { ok: true }; }
+    if (body.action === 'delete') {
+      const ev = events.find(e => e.id === body.id);
+      if (ev) await atDelete(ev);
+      return { ok: true };
+    }
+  } catch(err) {
+    console.error('API error', err);
+    return method === 'GET' ? [] : null;
+  }
+}
+
+async function loadEvents() {
+  showLoading(true);
+  try {
+    const data = await api('GET');
+    if(Array.isArray(data)) {
+      events = data;
+      if(events.length>0) nextId = Math.max(...events.map(e=>e.id||0))+1;
+      console.log('載入成功，共', events.length, '筆');
+      const dot=document.getElementById('api-status');
+      if(dot)dot.style.background='#639922';
+    } else {
+      console.error('API回傳異常:', data);
+      const dot=document.getElementById('api-status');
+      if(dot)dot.style.background='#E24B4A';
+      showToast('⚠️ 無法連線到資料庫，請稍後再試');
+    }
+  } catch(err) {
+    console.error('loadEvents error:', err);
+    showToast('⚠️ 連線錯誤：' + err.message);
+  }
+  showLoading(false);
+}
+
+
+function debugLog(msg) {
+  console.log(msg);
+  let panel = document.getElementById('debug-panel');
+  if(!panel) {
+    panel = document.createElement('div');
+    panel.id = 'debug-panel';
+    panel.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#1a1a18;color:#C0DD97;font-size:11px;font-family:monospace;padding:8px 12px;max-height:120px;overflow-y:auto;z-index:9999;';
+    document.body.appendChild(panel);
+  }
+  const line = document.createElement('div');
+  line.textContent = new Date().toLocaleTimeString() + ' ' + msg;
+  panel.appendChild(line);
+  panel.scrollTop = panel.scrollHeight;
+}
+function showLoading(on) {
+  loading = on;
+  let el = document.getElementById('loading-bar');
+  if(!el) {
+    el = document.createElement('div');
+    el.id = 'loading-bar';
+    el.style.cssText = 'position:fixed;top:0;left:0;right:0;height:3px;background:#1a1a18;z-index:9999;transition:opacity .3s;';
+    document.body.appendChild(el);
+  }
+  el.style.opacity = on ? '1' : '0';
+}
+
+function isFormOpen(){
+  const d=now.getDate();
+  return d>=15&&d<=20;
+}
+// 正式上線：依日期判斷，後台登入後不受限制
+const FORM_OPEN=isFormOpen();
+
+function switchMain(name){
+  ['form','calendar','edit','pw','admin'].forEach(n=>{
+    document.getElementById('main-'+n).classList.toggle('active',n===name);
+  });
+  ['form','calendar','edit'].forEach(n=>{
+    const el=document.getElementById('tab-'+n);
+    if(el)el.classList.toggle('active-tab',n===name);
+  });
+  document.getElementById('tab-admin').classList.remove('active-tab');
+  if(name==='form'){loadEvents().then(()=>renderCalendar());}
+  if(name==='calendar'){loadEvents().then(()=>renderCalendar());}
+  if(name==='admin'){loadEvents().then(()=>renderAdmin());}
+}
+
+
+function genCode(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let c='';for(let i=0;i<4;i++)c+=chars[Math.floor(Math.random()*chars.length)];
+  return c;
+}
+
+let editingId=null;
+function lookupCode(){
+  const code=document.getElementById('lookup-code').value.trim().toUpperCase();
+  const err=document.getElementById('lookup-err');
+  if(!code){err.textContent='請輸入編輯碼';return;}
+  const ev=events.find(e=>e.editCode===code);
+  if(!ev){err.textContent='找不到對應的資料，請確認編輯碼是否正確';return;}
+  err.textContent='';
+  editingId=ev.id;
+  document.getElementById('ef-name').value=ev.name;
+  document.getElementById('ef-type').value=ev.type;
+  document.getElementById('ef-format').value=ev.format;
+  document.getElementById('ef-date').value=ev.date;
+  const parts=(ev.time||'').split('–');
+  document.getElementById('ef-time-start').value=parts[0]||'';
+  document.getElementById('ef-time-end').value=parts[1]||'';
+  document.getElementById('ef-desc').value=ev.desc;
+  document.getElementById('ef-contact').value=ev.contact;
+  const ehYes=document.getElementById('ef-host-yes');
+  const ehNo=document.getElementById('ef-host-no');
+  const ehWrap=document.getElementById('ef-host-name-wrap');
+  const ehName=document.getElementById('ef-host-name');
+  if(ehYes&&ehNo&&ehWrap&&ehName){
+    if(ev.host){ehYes.checked=true;ehWrap.style.display='block';ehName.value=ev.host;}
+    else{ehNo.checked=true;ehWrap.style.display='none';}
+  }
+  const esYes=document.getElementById('ef-speaker-yes');
+  const esNo=document.getElementById('ef-speaker-no');
+  const esWrap=document.getElementById('ef-speakers-wrap');
+  const esList=document.getElementById('ef-speakers-list');
+  if(esYes&&esNo&&esWrap&&esList){
+    if(ev.speakers&&ev.speakers.length){
+      esYes.checked=true;esWrap.style.display='block';esList.innerHTML='';
+      ev.speakers.forEach(s=>{
+        const inp=document.createElement('input');inp.type='text';inp.className='ef-speaker-input';
+        inp.placeholder='講師本名';inp.value=s;
+        inp.style.cssText='width:100%;font-size:14px;padding:8px 10px;border:0.5px solid #d3d1c7;border-radius:8px;font-family:inherit;outline:none;margin-bottom:6px;display:block;';
+        esList.appendChild(inp);
+      });
+    } else {esNo.checked=true;esWrap.style.display='none';}
+  }
+  document.getElementById('edit-form-card').style.display='block';
+}
+function saveEdit(){
+  if(!editingId)return;
+  const ev=events.find(e=>e.id===editingId);
+  if(!ev)return;
+  const name=document.getElementById('ef-name').value.trim();
+  if(!name){alert('請填寫活動名稱');return;}
+  ev.name=name;
+  ev.type=document.getElementById('ef-type').value;
+  ev.format=document.getElementById('ef-format').value;
+  ev.date=document.getElementById('ef-date').value;
+  ev.time=document.getElementById('ef-time-start').value+'–'+document.getElementById('ef-time-end').value;
+  ev.desc=document.getElementById('ef-desc').value.trim();
+  ev.contact=document.getElementById('ef-contact').value.trim();
+  ev.host=document.getElementById('ef-host-yes').checked?document.getElementById('ef-host-name').value.trim():'';
+  ev.speakers=document.getElementById('ef-speaker-yes').checked?Array.from(document.querySelectorAll('.ef-speaker-input')).map(i=>i.value.trim()).filter(Boolean):[];
+  document.getElementById('edit-form-card').style.display='none';
+  document.getElementById('lookup-code').value='';
+  editingId=null;
+  api('POST',{action:'update',data:ev});
+  showToast('已儲存修改！');
+  document.getElementById('edit-form-card').style.display='none';
+  document.getElementById('lookup-code').value='';
+  editingId=null;
+}
+function deleteEntry(){
+  if(!editingId)return;
+  const delId=editingId;
+  const delEv=events.find(e=>e.id===delId);
+  events=events.filter(e=>e.id!==delId);
+  if(delEv) api('POST',{action:'delete',id:delId});
+  document.getElementById('edit-form-card').style.display='none';
+  document.getElementById('lookup-code').value='';
+  editingId=null;
+  document.getElementById('lookup-err').textContent='';
+  showToast('已成功刪除這筆資料');
+}
+function adminDelete(id){
+  if(window._pendingDelete===id){
+    const delEv=events.find(e=>e.id===id);
+    if(delEv) api('POST',{action:'delete',id:id});
+    events=events.filter(e=>e.id!==id);
+    window._pendingDelete=null;
+    renderAdmin();
+    showToast('已刪除');
+  } else {
+    window._pendingDelete=id;
+    renderAdmin();
+    setTimeout(()=>{if(window._pendingDelete===id){window._pendingDelete=null;renderAdmin();}},4000);
+  }
+}
+
+function showToast(msg){
+  let t=document.getElementById('toast');
+  if(!t){t=document.createElement('div');t.id='toast';t.className='toast';document.body.appendChild(t);}
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+function toggleHost(){
+  const show=document.getElementById('f-host-yes').checked;
+  document.getElementById('f-host-name-wrap').style.display=show?'block':'none';
+}
+function toggleSpeaker(){
+  const show=document.getElementById('f-speaker-yes').checked;
+  document.getElementById('f-speakers-wrap').style.display=show?'block':'none';
+}
+function addSpeaker(){
+  const wrap=document.getElementById('f-speakers-list');
+  const inp=document.createElement('input');
+  inp.type='text';inp.className='f-speaker-input';inp.placeholder='講師本名';
+  inp.style.cssText='width:100%;font-size:14px;padding:8px 10px;border:0.5px solid #d3d1c7;border-radius:8px;font-family:inherit;outline:none;margin-bottom:6px;display:block;';
+  wrap.appendChild(inp);inp.focus();
+}
+function toggleEditHost(){
+  const show=document.getElementById('ef-host-yes').checked;
+  document.getElementById('ef-host-name-wrap').style.display=show?'block':'none';
+}
+function toggleEditSpeaker(){
+  const show=document.getElementById('ef-speaker-yes').checked;
+  document.getElementById('ef-speakers-wrap').style.display=show?'block':'none';
+}
+function addEditSpeaker(){
+  const wrap=document.getElementById('ef-speakers-list');
+  const inp=document.createElement('input');
+  inp.type='text';inp.className='ef-speaker-input';inp.placeholder='講師本名';
+  inp.style.cssText='width:100%;font-size:14px;padding:8px 10px;border:0.5px solid #d3d1c7;border-radius:8px;font-family:inherit;outline:none;margin-bottom:6px;display:block;';
+  wrap.appendChild(inp);inp.focus();
+}
+
+function updateCountdown(){
+  const now=new Date();
+  const d=now.getDate();
+  const m=now.getMonth();
+  const y=now.getFullYear();
+  const closedNotice=document.getElementById('closed-notice');
+  const openBanner=document.getElementById('open-banner');
+  const submitBtn=document.getElementById('submit-btn');
+  const countdownMsg=document.getElementById('countdown-msg');
+  const openMsg=document.getElementById('open-msg');
+
+  if(adminUnlocked) return; // 後台登入不受影響
+
+  if(d>=15 && d<=20){
+    // 開放中
+    if(closedNotice) closedNotice.style.display='none';
+    if(openBanner) openBanner.style.display='block';
+    if(submitBtn) submitBtn.disabled=false;
+    const daysLeft=20-d;
+    if(openMsg) openMsg.innerHTML=`<strong>填報開放中！</strong><span class="open-countdown-num">${daysLeft}</span><span class="open-countdown-label">天後截止（${y}年${m+1}月20日 23:59）</span>`;
+  } else {
+    // 截止中
+    if(closedNotice) closedNotice.style.display='block';
+    if(openBanner) openBanner.style.display='none';
+    if(submitBtn) submitBtn.disabled=true;
+    let nextOpen, daysToOpen;
+    if(d<15){
+      // 當月15號還沒到
+      nextOpen=new Date(y,m,15);
+      daysToOpen=15-d;
+      if(countdownMsg) countdownMsg.innerHTML=`<strong>目前填報尚未開放</strong><span class="countdown-num">${daysToOpen}</span><span class="countdown-label">天後開放填報（${y}年${m+1}月15日）</span>`;
+    } else {
+      // 超過20號，等下個月15號
+      const nextMonth=m+1>11?0:m+1;
+      const nextYear=m+1>11?y+1:y;
+      nextOpen=new Date(nextYear,nextMonth,15);
+      const diff=Math.ceil((nextOpen-now)/(1000*60*60*24));
+      if(countdownMsg) countdownMsg.innerHTML=`<strong>本月填報已截止</strong><span class="countdown-num">${diff}</span><span class="countdown-label">天後開放下個月填報（${nextYear}年${nextMonth+1}月15日）</span>`;
+    }
+  }
+}
+function goAdmin(){
+  if(adminUnlocked){switchMain('admin');renderAdmin();}
+  else switchMain('pw');
+}
+
+function checkPw(){
+  const val=document.getElementById('pw-input').value;
+  if(val===ADMIN_PW){
+    adminUnlocked=true;
+    document.getElementById('pw-err').textContent='';
+    document.getElementById('pw-input').value='';
+    // 後台登入後解除填報限制
+    const closedNotice=document.getElementById('closed-notice');
+    const submitBtn=document.getElementById('submit-btn');
+    if(closedNotice) closedNotice.style.display='none';
+    if(submitBtn) submitBtn.disabled=false;
+    switchMain('admin');
+    renderAdmin();
+  } else {
+    document.getElementById('pw-err').textContent='密碼錯誤，請再試一次。';
+  }
+}
+
+function logout(){
+  adminUnlocked=false;
+  // 登出後恢復截止狀態
+  if(!isFormOpen()){
+    const closedNotice=document.getElementById('closed-notice');
+    const submitBtn=document.getElementById('submit-btn');
+    if(closedNotice) closedNotice.style.display='block';
+    if(submitBtn) submitBtn.disabled=true;
+  }
+  switchMain('form');
+}
+
+function validate(){
+  const fields=[
+    ['f-name','e-name'],['f-type','e-type'],['f-format','e-format'],
+    ['f-date','e-date'],['f-desc','e-desc'],['f-contact','e-contact']
+  ];
+  let ok=true;
+  fields.forEach(([fid,eid])=>{
+    const el=document.getElementById(fid);
+    const err=document.getElementById(eid);
+    const empty=!el.value.trim();
+    el.classList.toggle('err',empty);
+    err.style.display=empty?'block':'none';
+    if(empty)ok=false;
+  });
+  // time fields
+  const ts=document.getElementById('f-time-start').value;
+  const te=document.getElementById('f-time-end').value;
+  const timeErr=document.getElementById('e-time');
+  const timeInputs=[document.getElementById('f-time-start'),document.getElementById('f-time-end')];
+  if(!ts||!te){
+    timeInputs.forEach(el=>el.classList.add('err'));
+    timeErr.style.display='block';
+    ok=false;
+  } else if(te<=ts){
+    timeInputs.forEach(el=>el.classList.add('err'));
+    timeErr.textContent='結束時間必須晚於開始時間';
+    timeErr.style.display='block';
+    ok=false;
+  } else {
+    timeInputs.forEach(el=>el.classList.remove('err'));
+    timeErr.style.display='none';
+  }
+  return ok;
+}
+
+function submitForm(){
+  if(!FORM_OPEN && !adminUnlocked)return;
+  if(!validate())return;
+  const editCode=genCode();
+  const newId = nextId++;
+  const newEv = {
+    id:newId,
+    editCode,
+    name:document.getElementById('f-name').value.trim(),
+    type:document.getElementById('f-type').value,
+    format:document.getElementById('f-format').value,
+    date:document.getElementById('f-date').value,
+    time:document.getElementById('f-time-start').value+'–'+document.getElementById('f-time-end').value,
+    contact:document.getElementById('f-contact').value.trim(),
+    host:document.getElementById('f-host-yes').checked?document.getElementById('f-host-name').value.trim():'',
+    speakers:(()=>{
+      if(!document.getElementById('f-speaker-yes').checked)return[];
+      return Array.from(document.querySelectorAll('.f-speaker-input')).map(i=>i.value.trim()).filter(Boolean);
+    })(),
+    desc:document.getElementById('f-desc').value.trim(),
+    needsDM:false,
+    isOpen:false,
+    submittedAt:new Date().toLocaleString("zh-TW",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}),
+  };
+  events.push(newEv);
+  debugLog('送出資料: ' + newEv.name);
+  api('POST',{action:'add',data:newEv}).then(r => {
+    debugLog('送出結果: ' + JSON.stringify(r));
+    renderCalendar();
+  });
+  ['f-name','f-date','f-contact','f-desc'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-time-start').value='';
+  document.getElementById('f-time-end').value='';
+  document.getElementById('f-type').value='';
+  document.getElementById('f-format').value='';
+  document.getElementById('f-host-no').checked=true;
+  document.getElementById('f-host-name-wrap').style.display='none';
+  document.getElementById('f-host-name').value='';
+  document.getElementById('f-speaker-no').checked=true;
+  document.getElementById('f-speakers-wrap').style.display='none';
+  document.getElementById('f-speakers-list').innerHTML='<input type="text" class="f-speaker-input" placeholder="講師本名" style="margin-bottom:6px;" />';
+  const msg=document.getElementById('success-msg');
+  msg.style.display='block';
+  const er=document.getElementById('edit-result');
+  document.getElementById('edit-code-display').textContent=editCode;
+  er.style.display='block';
+  setTimeout(()=>{msg.style.display='none';},4000);
+}
+
+function renderCalendar(){
+  document.getElementById('cal-title').textContent=curY+'年 '+MONTH_ZH[curM];
+  const grid=document.getElementById('cgrid');
+  grid.innerHTML=WEEK.map(d=>`<div class="ch">${d}</div>`).join('');
+  const first=new Date(curY,curM,1).getDay();
+  const days=new Date(curY,curM+1,0).getDate();
+  const todayD=now.getDate(),todayM=now.getMonth(),todayY=now.getFullYear();
+  for(let i=0;i<first;i++)grid.innerHTML+=`<div class="cd empty"></div>`;
+  for(let d=1;d<=days;d++){
+    const isToday=d===todayD&&curM===todayM&&curY===todayY;
+    const dateStr=curY+'-'+String(curM+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const dayEvs=events.filter(e=>e.date===dateStr);
+    const dots=dayEvs.map(e=>{
+      const cls=e.type==='internal'?'edot-int':e.type==='meeting'?'edot-meeting':'edot-ext';
+      return `<span class="edot ${cls}">${e.name}</span>`;
+    }).join('');
+    const deadline=d===20?`<span class="plabel pl-deadline">填報截止</span>`:'';
+    grid.innerHTML+=`<div class="cd${isToday?' today':''}"><div class="dn">${d}</div>${deadline}${dots}</div>`;
+  }
+}
+function prevMonth(){curM--;if(curM<0){curM=11;curY--;}renderCalendar();}
+function nextMonth(){curM++;if(curM>11){curM=0;curY++;}renderCalendar();}
+
+function cardHTML(e){
+  const fmtLabel={online:'線上',offline:'線下',hybrid:'線上+線下'}[e.format]||e.format;
+  const dmBadge=e.needsDM?`<span class="badge b-dm">需製作 DM</span>`:'';
+  const openBadge=e.isOpen?`<span class="badge b-open">對外公開</span>`:`<span class="badge b-closed-tag">不公開</span>`;
+  return`<div class="acard">
+    <div class="acard-title">${e.name}</div>
+    <div class="acard-meta">${e.date||'日期未定'} ${e.time||''} ・ ${e.contact||''}</div><div class="acard-meta" style="color:#b4b2a9;font-size:11px;margin-top:1px">填報時間：${e.submittedAt||'—'}</div>
+    <div class="badge-row">
+      <span class="badge ${e.type==='internal'?'b-int':e.type==='meeting'?'b-meeting':'b-ext'}">${e.type==='internal'?'內部團隊':e.type==='meeting'?'內部會議':'公開'}</span>
+      <span class="badge b-fmt">${fmtLabel}</span>
+      ${dmBadge}${openBadge}
+    </div>
+    ${e.desc?`<div class="acard-desc">${e.desc}</div>`:''}
+    ${e.host?`<div class="acard-meta" style="margin-top:6px;"><span style="color:#1a1a18;font-weight:500">主持人：</span>${e.host}</div>`:''}
+    ${e.speakers&&e.speakers.length?`<div class="acard-meta" style="margin-top:3px;"><span style="color:#1a1a18;font-weight:500">講師：</span>${e.speakers.join('、')}</div>`:''}
+    <div class="toggle-row">
+      <button class="toggle-btn ${e.needsDM?'on-dm':''}" onclick="toggleDM(${e.id})">● 需製作 DM</button>
+      <button class="toggle-btn ${e.isOpen?'on-open':''}" onclick="toggleOpen(${e.id})">● 對外公開</button>
+      <button class="admin-delete ${window._pendingDelete===e.id?'confirming':''}" onclick="adminDelete(${e.id})">${window._pendingDelete===e.id?'再按一次確認刪除':'刪除'}</button>
+    </div>
+  </div>`;
+}
+
+function renderAdmin(){
+  const monthSelEl=document.getElementById('month-filter');
+  const activeMonth=monthSelEl?monthSelEl.value:'all';
+  const baseEvents=activeMonth==='all'?events:events.filter(e=>e.date&&e.date.startsWith(activeMonth));
+  const total=baseEvents.length,dm=baseEvents.filter(e=>e.needsDM).length,open=baseEvents.filter(e=>e.isOpen).length;
+  document.getElementById('summary-row').innerHTML=`
+    <div class="sc"><div class="sl">全部紀錄</div><div class="sn">${total}</div></div>
+    <div class="sc"><div class="sl">需製作 DM</div><div class="sn" style="color:#854F0B">${dm}</div></div>
+    <div class="sc"><div class="sl">對外公開</div><div class="sn" style="color:#3C3489">${open}</div></div>
+  `;
+
+  // populate month dropdown
+  const sel=document.getElementById('month-filter');
+  if(sel){
+    const curVal=sel.value;
+    const months=[...new Set(events.map(e=>e.date?e.date.slice(0,7):'').filter(Boolean))].sort().reverse();
+    sel.innerHTML='<option value="all">所有月份</option>'+months.map(m=>{
+      const [y,mo]=m.split('-');
+      return `<option value="${m}"${curVal===m?' selected':''}>${y}年${parseInt(mo)}月</option>`;
+    }).join('');
+  }
+  // apply filters
+  let filtered=currentFilter==='all'?events:events.filter(e=>e.type===currentFilter);
+  const monthVal=sel?sel.value:'all';
+  if(monthVal!=='all') filtered=filtered.filter(e=>e.date&&e.date.startsWith(monthVal));
+  // sort by date ascending
+  filtered=[...filtered].sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  document.getElementById('list-all').innerHTML=filtered.length?filtered.map(cardHTML).join(''):`<div class="empty-note">目前沒有符合的項目</div>`;
+}
+
+function toggleDM(id){
+  const e=events.find(x=>x.id===id);
+  if(e){
+    e.needsDM=!e.needsDM;
+    renderAdmin();
+    api('POST',{action:'update',data:e}).then(r=>debugLog('DM更新:'+JSON.stringify(r)));
+  }
+}
+function toggleOpen(id){
+  const e=events.find(x=>x.id===id);
+  if(e){
+    e.isOpen=!e.isOpen;
+    renderAdmin();
+    api('POST',{action:'update',data:e}).then(r=>debugLog('公開更新:'+JSON.stringify(r)));
+  }
+}
+function setFilter(f,btn){currentFilter=f;document.querySelectorAll('.fb').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderAdmin();}
+
+// Init: setup sheet headers then load data
+(async () => {
+  await api('POST', {action:'init'});
+  await loadEvents();
+  renderCalendar();
+  renderAdmin();
+  updateCountdown();
+})();
+
+if(!FORM_OPEN){
+  document.getElementById('closed-notice').style.display='block';
+  document.getElementById('submit-btn').disabled=true;
+}
+renderCalendar();
+</script>
+</body>
+</html>
